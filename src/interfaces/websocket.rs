@@ -26,7 +26,7 @@ impl WebsocketConsumer {
     pub fn new(url: String) -> Self {
         Self { url }
     }
-    pub async fn connect(
+    pub async fn consume(
         &self,
         channel_sender: async_channel::Sender<Value>,
     ) -> utils::GenericResult<()> {

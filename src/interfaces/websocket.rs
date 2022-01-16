@@ -14,17 +14,30 @@ use crate::utils;
 use async_std::task;
 use futures::stream::{SplitSink, SplitStream};
 use futures::{try_join, SinkExt, StreamExt};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::time::Duration;
 
 #[derive(Debug)]
 pub struct WebsocketConsumer {
     pub url: String,
+    pub heartbeat_msg: String,
+    pub subscription_message: String,
 }
 
 impl WebsocketConsumer {
-    pub fn new(url: String) -> Self {
-        Self { url }
+    pub fn new<T: ToOwned<Owned = String>>(
+        url: T,
+        heartbeat_msg: T,
+        subscription_message: T,
+    ) -> Self {
+        let url = url.to_owned();
+        let heartbeat_msg = heartbeat_msg.to_owned();
+        let subscription_message = subscription_message.to_owned();
+        Self {
+            url,
+            heartbeat_msg,
+            subscription_message,
+        }
     }
     pub async fn consume(
         &self,
@@ -32,11 +45,11 @@ impl WebsocketConsumer {
     ) -> utils::GenericResult<()> {
         let (websocket, _) = connect_async(&self.url).await.unwrap();
         let (mut websocket_sender, websocket_receiver) = websocket.split();
-        let msg_subscription = self.create_message_fro_subscription();
-        Self::subscribe(&mut websocket_sender, msg_subscription).await?;
+
+        Self::subscribe(&mut websocket_sender, self.subscription_message.clone()).await?;
         try_join!(
             task::spawn(Self::listen(websocket_receiver, channel_sender)),
-            Self::send_heartbeat(websocket_sender)
+            self.send_heartbeat(websocket_sender)
         )?;
         Ok(())
     }
@@ -72,24 +85,13 @@ impl WebsocketConsumer {
     }
 
     async fn send_heartbeat(
+        &self,
         mut sender: SplitSink<WebSocketStream<ConnectStream>, Message>,
     ) -> utils::GenericResult<()> {
-        let event = json!({
-            "event":"subscribe",
-            "feed":"heartbeat"
-        })
-        .to_string();
         loop {
-            let msg = event.clone();
+            let msg = self.heartbeat_msg.clone();
             sender.send(Message::Text(msg)).await?;
             task::sleep(Duration::from_secs(30)).await;
         }
-    }
-    fn create_message_fro_subscription(&self) -> String {
-        json!(
-        {
-            "event": "subscribe"
-        })
-        .to_string()
     }
 }

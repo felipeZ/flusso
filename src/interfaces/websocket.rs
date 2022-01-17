@@ -10,7 +10,6 @@ use async_tungstenite::async_std::{connect_async, ConnectStream};
 use async_tungstenite::tungstenite::protocol::Message;
 use async_tungstenite::WebSocketStream;
 
-use crate::pipe::Pipe;
 use crate::utils;
 use async_std::task;
 use futures::stream::{SplitSink, SplitStream};
@@ -25,15 +24,11 @@ pub struct WebsocketConsumer {
 }
 
 impl WebsocketConsumer {
-    pub fn new<T: ToOwned<Owned = String>>(
-        url: T,
-        heartbeat_msg: T,
-        subscription_message: T,
-    ) -> Self {
+    pub fn new(url: String, heartbeat_msg: String, subscription_message: String) -> Self {
         Self {
-            url: url.to_owned(),
-            heartbeat_msg: heartbeat_msg.to_owned(),
-            subscription_message: subscription_message.to_owned(),
+            url,
+            heartbeat_msg,
+            subscription_message,
         }
     }
     pub async fn consume(

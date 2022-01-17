@@ -10,13 +10,13 @@ use async_tungstenite::async_std::{connect_async, ConnectStream};
 use async_tungstenite::tungstenite::protocol::Message;
 use async_tungstenite::WebSocketStream;
 
+use crate::pipe::Pipe;
 use crate::utils;
 use async_std::task;
 use futures::stream::{SplitSink, SplitStream};
 use futures::{try_join, SinkExt, StreamExt};
 use serde_json::Value;
 use std::time::Duration;
-
 #[derive(Debug)]
 pub struct WebsocketConsumer {
     pub url: String,
@@ -30,13 +30,10 @@ impl WebsocketConsumer {
         heartbeat_msg: T,
         subscription_message: T,
     ) -> Self {
-        let url = url.to_owned();
-        let heartbeat_msg = heartbeat_msg.to_owned();
-        let subscription_message = subscription_message.to_owned();
         Self {
-            url,
-            heartbeat_msg,
-            subscription_message,
+            url: url.to_owned(),
+            heartbeat_msg: heartbeat_msg.to_owned(),
+            subscription_message: subscription_message.to_owned(),
         }
     }
     pub async fn consume(

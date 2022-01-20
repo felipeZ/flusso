@@ -21,16 +21,23 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct WebsocketConsumer {
     pub url: String,
-    pub heartbeat_msg: String,
     pub subscription_message: String,
+    pub heartbeat_msg: String,
+    pub heartbeat_freq: Duration,
 }
 
 impl WebsocketConsumer {
-    pub fn new(url: String, heartbeat_msg: String, subscription_message: String) -> Self {
+    pub fn new(
+        url: String,
+        heartbeat_msg: String,
+        subscription_message: String,
+        heartbeat_freq: Duration,
+    ) -> Self {
         Self {
             url,
-            heartbeat_msg,
             subscription_message,
+            heartbeat_msg,
+            heartbeat_freq,
         }
     }
     pub async fn consume<P: 'static + Pipe>(
@@ -88,7 +95,7 @@ impl WebsocketConsumer {
         loop {
             let msg = self.heartbeat_msg.clone();
             sender.send(Message::Text(msg)).await?;
-            task::sleep(Duration::from_secs(30)).await;
+            task::sleep(self.heartbeat_freq).await;
         }
     }
 }
